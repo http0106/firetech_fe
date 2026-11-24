@@ -206,7 +206,7 @@ const Header: React.FC = () => {
                     {item.hasDropdown && (
                         <FaChevronDown
                             className={`
-                                w-2.5 h-2.5 ml-0.5 opacity-60
+                                w-2.5 h-2.5 ml-0.5 opacity-60  
                                 ${mobile ? '' : 'group-hover:rotate-180'}
                                 transition-transform duration-200
                             `}
@@ -289,7 +289,7 @@ const Header: React.FC = () => {
                 borderColor: 'var(--border)'
             }}
         >
-            <div className="max-w-[1280px] mx-auto px-4">
+            <div className="max-w-[1280px] mx-auto  px-4 ">
 
                 {/* HÀNG TRÊN: LOGO VÀ CÔNG CỤ */}
                 <div className={isTopVisible ? 'block' : 'hidden'}>

@@ -16,6 +16,8 @@ import { nowISO, uid } from '../utils/format';
  *
  * "Ghi nhớ đăng nhập" → localStorage; không ghi nhớ → sessionStorage (đóng tab là đăng xuất).
  */
+
+
 export type AuthScope = 'customer' | 'staff';
 
 const SESSION_KEYS: Record<AuthScope, string> = {

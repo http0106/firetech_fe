@@ -7,6 +7,7 @@ const Home = () => {
     // Ưu tiên sản phẩm nổi bật; nếu chưa đánh dấu sản phẩm nào thì lấy 8 sản phẩm đầu
     const featured = products.filter((p) => p.featured);
     const list = (featured.length ? featured : products).slice(0, 8);
+    console.log(list);
 
     return (
         <div className="w-full min-h-screen pb-16">

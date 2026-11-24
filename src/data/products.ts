@@ -115,6 +115,7 @@ const RAW_PRODUCTS: Product[] = [
             { label: 'Ngưỡng nhiệt', value: '70 °C' },
             { label: 'Điện áp', value: '24 VDC' },
         ],
+
     },
     {
         id: 'p22', code: 'NM-PNL10', name: 'Tủ trung tâm báo cháy 10 kênh Nohmi',
@@ -244,6 +245,13 @@ const RAW_PRODUCTS: Product[] = [
     },
     {
         id: 'p19', code: 'EM-LIGHT', name: 'Đèn chiếu sáng sự cố tự động',
+        category: 'den-exit', brand: 'Kentom', price: 220_000, stock: 160,
+        standards: ['coco', 'tcvn'], warrantyMonths: 12,
+        description: 'Tự bật khi mất điện, chiếu sáng cầu thang và hành lang thoát nạn.',
+        specs: [{ label: 'Thời gian sáng', value: '≥ 2 giờ' }],
+    },
+    {
+        id: 'p20', code: 'EM-LIGHT', name: 'Đèn chiếu sáng sự cố tự động',
         category: 'den-exit', brand: 'Kentom', price: 220_000, stock: 160,
         standards: ['coco', 'tcvn'], warrantyMonths: 12,
         description: 'Tự bật khi mất điện, chiếu sáng cầu thang và hành lang thoát nạn.',
