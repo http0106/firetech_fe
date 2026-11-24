@@ -3,10 +3,9 @@ import { Button, Card, Collapse, Modal } from 'antd';
 import { CheckCircleFilled } from '@ant-design/icons';
 import { FaPhoneAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import QuoteForm from '../componentmain/QuoteForm';
-import { SectionTitle } from '../componentmain/ui';
-import { useStore } from '../context/StoreContext';
-import { useAuth } from '../context/AuthContext';
+import QuoteForm from '../components/QuoteForm';
+import { SectionTitle } from '../components/ui';
+import { useStore } from '../store';
 
 /** Trang Giám sát & Cứu hộ: gói bảo trì định kỳ, hotline sự cố, câu hỏi thường gặp. */
 const PLANS = [
@@ -16,8 +15,8 @@ const PLANS = [
 ];
 
 const Monitoring = () => {
-    const { settings } = useStore().db;
-    const { user } = useAuth();
+    const { db, user } = useStore();
+    const { settings } = db;
     const navigate = useNavigate();
     const [plan, setPlan] = useState<string | null>(null);
 

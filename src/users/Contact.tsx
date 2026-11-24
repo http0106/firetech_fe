@@ -1,7 +1,7 @@
 import { Card, Descriptions } from 'antd';
-import QuoteForm from '../componentmain/QuoteForm';
-import { PageHeader } from '../componentmain/ui';
-import { useStore } from '../context/StoreContext';
+import QuoteForm from '../components/QuoteForm';
+import { PageHeader } from '../components/ui';
+import { useStore } from '../store';
 
 /** Trang Nhận báo giá (nút "Nhận Báo Giá" trên Header). */
 const Contact = () => {

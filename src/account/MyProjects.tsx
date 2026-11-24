@@ -2,19 +2,16 @@ import { useState } from 'react';
 import { Button, Tag } from 'antd';
 import { FaMapMarkerAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { EmptyState, PageHeader, StatusTag } from '../componentmain/ui';
-import RequestServiceModal from './RequestServiceModal';
-import { useAuth } from '../context/AuthContext';
-import { useStore } from '../context/StoreContext';
+import { EmptyState, PageHeader, StatusTag } from '../components/ui';
+import { RequestServiceModal } from '../components/QuoteForm';
+import { useStore } from '../store';
 import { PROJECT_STATUS } from '../data/constants';
-import { maintenanceInfo, warrantyInfo } from '../utils/business';
-import { formatDate } from '../utils/format';
+import { maintenanceInfo, warrantyInfo, formatDate } from '../utils';
 import type { Project } from '../types';
 
-/**   Danh sách công trình của khách hàng. */
+/** Danh sách công trình của khách hàng. */
 const MyProjects = () => {
-    const { user } = useAuth();
-    const { db } = useStore();
+    const { db, user } = useStore();
     const navigate = useNavigate();
     const [requestFor, setRequestFor] = useState<Project | null>(null);
     const projects = db.projects.filter((p) => p.customerId === user?.id);

@@ -1,25 +1,22 @@
 import type { ReactNode } from 'react';
-import { Button, Rate } from 'antd';
+import { App, Button, Rate } from 'antd';
 import { FaCartPlus, FaCheck, FaTimes } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
-import ProductThumb from '../componentmain/ProductThumb';
-import { EmptyState } from '../componentmain/ui';
-import { useShopActions } from '../context/ShopContext';
-import { useLookup, useStore } from '../context/StoreContext';
+import { ProductThumb, EmptyState } from '../components/ui';
+import { useStore, useLookup } from '../store';
 import { STANDARDS, categoryLabel } from '../data/constants';
-import { ratingOf } from '../utils/business';
-import { formatPrice } from '../utils/format';
+import { ratingOf, formatPrice } from '../utils';
 import type { Product } from '../types';
 
 /**
- * GIAO DIỆN MỚI — So sánh sản phẩm (tối đa 4).
+ * So sánh sản phẩm (tối đa 4).
  * Giải quyết: khách chỉ muốn xem/so sánh giá mà không phải hỏi báo giá qua admin.
  */
 const Compare = () => {
-    const { compare, toggleCompare, addWithToast } = useShopActions();
-    const { db } = useStore();
+    const { db, compare, toggleCompare, addToCart } = useStore();
     const lookup = useLookup();
     const navigate = useNavigate();
+    const { message } = App.useApp();
 
     const products = compare.map((id) => lookup.product(id)).filter((p): p is Product => !!p);
 
@@ -40,22 +37,18 @@ const Compare = () => {
     const specLabels = [...new Set(products.flatMap((p) => p.specs.map((s) => s.label)))];
 
     const rows: { label: string; render: (p: Product) => ReactNode }[] = [
-        {
-            label: 'Giá', render: (p) => (
-                <span className={`font-bold ${p.price === minPrice ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {formatPrice(p.price)}{p.price === minPrice && <span className="block text-[11px] font-semibold">Giá thấp nhất</span>}
-                </span>
-            )
-        },
+        { label: 'Giá', render: (p) => (
+            <span className={`font-bold ${p.price === minPrice ? 'text-emerald-600' : 'text-red-600'}`}>
+                {formatPrice(p.price)}{p.price === minPrice && <span className="block text-[11px] font-semibold">Giá thấp nhất</span>}
+            </span>
+        ) },
         { label: 'Thương hiệu', render: (p) => p.brand },
         { label: 'Danh mục', render: (p) => categoryLabel(p.category) },
         { label: 'Bảo hành', render: (p) => `${p.warrantyMonths} tháng` },
-        {
-            label: 'Đánh giá', render: (p) => {
-                const r = ratingOf(db.reviews, 'product', p.id);
-                return r.count ? <span className="inline-flex items-center gap-1"><Rate disabled allowHalf value={Math.round(r.avg * 2) / 2} style={{ fontSize: 12 }} /> ({r.count})</span> : '—';
-            }
-        },
+        { label: 'Đánh giá', render: (p) => {
+            const r = ratingOf(db.reviews, 'product', p.id);
+            return r.count ? <span className="inline-flex items-center gap-1"><Rate disabled allowHalf value={Math.round(r.avg * 2) / 2} style={{ fontSize: 12 }} /> ({r.count})</span> : '—';
+        } },
         { label: 'Tình trạng', render: (p) => (p.stock > 0 ? 'Còn hàng' : 'Hết hàng') },
         ...STANDARDS.map((s) => ({
             label: s.label,
@@ -94,8 +87,7 @@ const Compare = () => {
                                             type="primary" danger
                                             className="mt-2"
                                             icon={<FaCartPlus />}
-                                            disabled={p.stock <= 0}
-                                            onClick={() => addWithToast(p.id)}
+                                            onClick={() => { addToCart(p.id); message.success('Đã thêm vào giỏ hàng'); }}
                                         >
                                             Thêm vào giỏ
                                         </Button>

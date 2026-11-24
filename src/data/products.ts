@@ -1,7 +1,12 @@
 import type { Product } from '../types';
 
-/** Danh mục sản phẩm mẫu. Giá lưu dạng số (VND) để lọc, sắp xếp và tính tiền. */
-const RAW_PRODUCTS: Product[] = [
+/**
+ * DANH SÁCH SẢN PHẨM.
+ * Muốn thêm sản phẩm: chép 1 khối { ... } bên dưới, đổi id (không trùng), lưu file → web hiện ngay.
+ * - price: giá bán (số, đơn vị VNĐ). image: để trống thì dùng ảnh minh họa theo danh mục.
+ * - category: 'binh-chua-chay' | 'bao-chay' | 'voi-tru' | 'bao-ho' | 'den-exit'
+ */
+export const PRODUCTS: Product[] = [
     // --- Bình chữa cháy bột ABC ---
     {
         id: 'p1', code: 'MFZL1', name: 'Bình chữa cháy bột ABC 1kg MFZL1 – mini ô tô',
@@ -115,7 +120,6 @@ const RAW_PRODUCTS: Product[] = [
             { label: 'Ngưỡng nhiệt', value: '70 °C' },
             { label: 'Điện áp', value: '24 VDC' },
         ],
-
     },
     {
         id: 'p22', code: 'NM-PNL10', name: 'Tủ trung tâm báo cháy 10 kênh Nohmi',
@@ -250,17 +254,11 @@ const RAW_PRODUCTS: Product[] = [
         description: 'Tự bật khi mất điện, chiếu sáng cầu thang và hành lang thoát nạn.',
         specs: [{ label: 'Thời gian sáng', value: '≥ 2 giờ' }],
     },
-    {
-        id: 'p20', code: 'EM-LIGHT', name: 'Đèn chiếu sáng sự cố tự động',
+     {
+        id: 'p30', code: 'EM-LIGHT', name: 'Đèn chiếu sáng sự cố tự động X2',
         category: 'den-exit', brand: 'Kentom', price: 220_000, stock: 160,
         standards: ['coco', 'tcvn'], warrantyMonths: 12,
         description: 'Tự bật khi mất điện, chiếu sáng cầu thang và hành lang thoát nạn.',
         specs: [{ label: 'Thời gian sáng', value: '≥ 2 giờ' }],
     },
 ];
-
-/**
- * Ảnh sản phẩm: các link Unsplash trong danh sách cũ hiển thị ảnh KHÔNG liên quan (buổi hòa nhạc, đồ ăn...)
- * nên tạm dùng ảnh minh họa theo danh mục (ProductThumb). Admin nhập link ảnh thật tại Quản trị → Sản phẩm.
- */
-export const SEED_PRODUCTS: Product[] = RAW_PRODUCTS;

@@ -1,10 +1,10 @@
 import { Button, Card, Drawer, Input, Segmented, Steps, Tag } from 'antd';
 import { FaSearch } from 'react-icons/fa';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { EmptyState, PageHeader } from '../componentmain/ui';
-import { useStore } from '../context/StoreContext';
+import { EmptyState, PageHeader } from '../components/ui';
+import { useStore } from '../store';
 import { DOC_TYPES, categoryLabel } from '../data/constants';
-import { formatDate, matches } from '../utils/format';
+import { formatDate, matches } from '../utils';
 
 /**
  * Tài liệu & hướng dẫn: hướng dẫn sử dụng thiết bị, checklist tự kiểm tra, tiêu chuẩn, văn bản pháp quy.

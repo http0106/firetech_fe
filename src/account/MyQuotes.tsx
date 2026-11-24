@@ -1,20 +1,15 @@
 import { useState } from 'react';
 import { Alert, App, Button, Descriptions, Drawer, Table, Tag } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader, StatusTag } from '../componentmain/ui';
-import { useAuth } from '../context/AuthContext';
-import { useLookup, useStore } from '../context/StoreContext';
+import { PageHeader, StatusTag } from '../components/ui';
+import { useStore, useLookup } from '../store';
 import { QUOTE_STATUS } from '../data/constants';
-import { daysUntil, formatDate, formatPrice } from '../utils/format';
+import { daysUntil, formatDate, formatPrice } from '../utils';
 import type { Quote } from '../types';
 
-/**
- *  — Báo giá của khách: xem giá tư vấn viên chào, đồng ý / từ chối trực tuyến
- * (trước đây phải trao đổi qua điện thoại với admin, mất thời gian hai bên).
- */
+/** Báo giá của khách: xem giá tư vấn viên chào, đồng ý / từ chối trực tuyến. */
 const MyQuotes = () => {
-    const { user } = useAuth();
-    const { db, update } = useStore();
+    const { db, edit, user } = useStore();
     const lookup = useLookup();
     const navigate = useNavigate();
     const { message } = App.useApp();
@@ -23,7 +18,7 @@ const MyQuotes = () => {
     const open = quotes.find((q) => q.id === openId);
 
     const respond = (q: Quote, status: 'accepted' | 'rejected') => {
-        update('quotes', (list) => list.map((x) => (x.id === q.id ? { ...x, status } : x)));
+        edit('quotes', q.id, { status });
         message.success(status === 'accepted' ? 'Đã đồng ý báo giá. Tư vấn viên sẽ liên hệ để chốt đơn.' : 'Đã từ chối báo giá.');
     };
 

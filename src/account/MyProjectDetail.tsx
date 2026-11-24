@@ -2,18 +2,16 @@ import { useState } from 'react';
 import { App, Button, Form, Input, Modal, Rate, Result } from 'antd';
 import { FaArrowLeft, FaStar, FaTools } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router-dom';
-import ProjectInfo from '../componentmain/ProjectInfo';
-import { PageHeader } from '../componentmain/ui';
-import RequestServiceModal from './RequestServiceModal';
-import { useAuth } from '../context/AuthContext';
-import { useStore } from '../context/StoreContext';
-import { todayISO, uid } from '../utils/format';
+import ProjectInfo from '../components/ProjectInfo';
+import { PageHeader } from '../components/ui';
+import { RequestServiceModal } from '../components/QuoteForm';
+import { useStore } from '../store';
+import { todayISO, uid } from '../utils';
 
 /** Chi tiết công trình của khách: thiết bị, bảo hành, lịch sử bảo trì, đánh giá dịch vụ. */
 const MyProjectDetail = () => {
     const { id } = useParams();
-    const { user } = useAuth();
-    const { db, update } = useStore();
+    const { db, add, user } = useStore();
     const navigate = useNavigate();
     const { message } = App.useApp();
     const [requestOpen, setRequestOpen] = useState(false);
@@ -50,10 +48,7 @@ const MyProjectDetail = () => {
                     layout="vertical"
                     initialValues={{ rating: 5 }}
                     onFinish={(v: { rating: number; comment: string }) => {
-                        update('reviews', (list) => [
-                            { id: uid('r'), userId: user!.id, userName: user!.name, targetType: 'service', targetId: project.id, rating: v.rating, comment: v.comment, createdAt: todayISO() },
-                            ...list,
-                        ]);
+                        add('reviews', { id: uid('r'), userId: user!.id, userName: user!.name, targetType: 'service', targetId: project.id, rating: v.rating, comment: v.comment, createdAt: todayISO() });
                         setRateOpen(false);
                         message.success('Cảm ơn bạn đã đánh giá dịch vụ!');
                     }}

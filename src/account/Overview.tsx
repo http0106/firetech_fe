@@ -2,13 +2,11 @@ import { useState } from 'react';
 import { Alert, Button, Table, Tag } from 'antd';
 import { FaBuilding, FaCalendarAlt, FaFireExtinguisher, FaShieldAlt } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
-import { EmptyState, Panel, StatCard, StatusTag } from '../componentmain/ui';
-import RequestServiceModal from './RequestServiceModal';
-import { useAuth } from '../context/AuthContext';
-import { useLookup, useStore } from '../context/StoreContext';
+import { EmptyState, Panel, StatCard, StatusTag } from '../components/ui';
+import { RequestServiceModal } from '../components/QuoteForm';
+import { useStore, useLookup } from '../store';
 import { ORDER_STATUS, QUOTE_STATUS } from '../data/constants';
-import { maintenanceInfo, warrantyInfo } from '../utils/business';
-import { formatDate, formatPrice } from '../utils/format';
+import { maintenanceInfo, warrantyInfo, formatDate, formatPrice } from '../utils';
 import type { Project } from '../types';
 
 /**
@@ -17,8 +15,7 @@ import type { Project } from '../types';
  * thiết bị nào còn/sắp hết bảo hành — kèm đơn hàng và báo giá gần đây.
  */
 const Overview = () => {
-    const { user } = useAuth();
-    const { db } = useStore();
+    const { db, user } = useStore();
     const lookup = useLookup();
     const navigate = useNavigate();
     const [requestFor, setRequestFor] = useState<Project | null>(null);

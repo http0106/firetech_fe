@@ -1,18 +1,14 @@
 import { App, Button, Popconfirm, Table } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader, StatusTag } from '../componentmain/ui';
-import { useAuth } from '../context/AuthContext';
-import { useLookup, useStore } from '../context/StoreContext';
-import { useShop } from '../context/ShopContext';
+import { PageHeader, StatusTag } from '../components/ui';
+import { useStore, useLookup } from '../store';
 import { ORDER_STATUS } from '../data/constants';
-import { formatDate, formatPrice } from '../utils/format';
+import { formatDate, formatPrice } from '../utils';
 
 /** Đơn hàng của khách: theo dõi trạng thái, hủy đơn chờ xác nhận, mua lại. */
 const MyOrders = () => {
-    const { user } = useAuth();
-    const { db, update } = useStore();
+    const { db, edit, user, addToCart } = useStore();
     const lookup = useLookup();
-    const { addToCart } = useShop();
     const { message } = App.useApp();
     const navigate = useNavigate();
     const orders = db.orders.filter((o) => o.customerId === user?.id);
@@ -57,7 +53,7 @@ const MyOrders = () => {
                                             okText="Hủy đơn"
                                             cancelText="Không"
                                             onConfirm={() => {
-                                                update('orders', (list) => list.map((x) => (x.id === o.id ? { ...x, status: 'cancelled' } : x)));
+                                                edit('orders', o.id, { status: 'cancelled' });
                                                 message.success(`Đã hủy đơn ${o.code}`);
                                             }}
                                         >
@@ -68,13 +64,7 @@ const MyOrders = () => {
                                         <Button
                                             size="small"
                                             onClick={() => {
-                                                const added = o.items.filter((i) => addToCart(i.productId, i.quantity).ok).length;
-                                                if (!added) {
-                                                    message.warning('Các sản phẩm trong đơn này hiện đã hết hàng hoặc ngừng kinh doanh');
-                                                    return;
-                                                }
-                                                if (added < o.items.length)
-                                                    message.info(`Đã thêm ${added}/${o.items.length} sản phẩm, một số sản phẩm đã hết hàng`);
+                                                o.items.forEach((i) => addToCart(i.productId, i.quantity));
                                                 navigate('/cart');
                                             }}
                                         >

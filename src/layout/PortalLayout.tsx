@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Badge, Button, Drawer, Grid, Menu } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -19,117 +19,107 @@ import {
     FaUserCog,
     FaUserShield,
 } from 'react-icons/fa';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import type { Permission } from '../types';
-import Logo from '../componentmain/Logo';
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Logo, Forbidden } from '../components/ui';
 import NotificationDropdown from '../users/component/Notification';
-import { AccountMenu } from './HeaderParts';
-import { useAuth } from '../context/AuthContext';
-import { useStore } from '../context/StoreContext';
-import { NotificationProvider } from '../context/NotificationContext';
-import { ROLE_LABELS } from '../data/constants';
+import AccountMenu from './AccountMenu';
+import { useStore } from '../store';
+import { ROLE_LABELS, canOpen } from '../data/constants';
 
 /**
- * GIAO DIỆN MỚI — Bố cục trang nội bộ (/portal) cho Admin, Kinh doanh, Kỹ thuật, Kế toán.
- * Menu trái được lọc theo QUYỀN của tài khoản (Admin cấp trong "Tài khoản & phân quyền"),
- * nên cùng một vai trò có thể thấy menu khác nhau tùy quyền được cấp.
+ * Bố cục trang nội bộ /portal (Admin, Kinh doanh, Kỹ thuật, Kế toán).
+ * PHÂN QUYỀN nằm ở 2 chỗ trong file này, cùng dùng hàm canOpen():
+ *   1. Menu trái chỉ hiện các trang vai trò được mở.
+ *   2. Gõ thẳng địa chỉ trang không được mở → hiện trang 403.
  */
-interface NavItem {
-    key: string;
-    label: string;
-    icon: ReactNode;
-    perm?: Permission;
-    badge?: number;
-}
+type MenuItem = { page: string; label: string; icon: ReactNode };
 
-const PortalLayoutInner = () => {
-    const { user, can } = useAuth();
-    const { db } = useStore();
+/** Menu trái. `page` = phần sau "/portal/" ('' là trang Tổng quan). */
+const MENU: { title?: string; items: MenuItem[] }[] = [
+    { items: [{ page: '', label: 'Tổng quan', icon: <FaTachometerAlt /> }] },
+    {
+        title: 'Kinh doanh & CSKH',
+        items: [
+            { page: 'chat', label: 'Tư vấn trực tuyến', icon: <FaComments /> },
+            { page: 'quotes', label: 'Yêu cầu báo giá', icon: <FaFileSignature /> },
+            { page: 'orders', label: 'Đơn hàng', icon: <FaShoppingBag /> },
+            { page: 'reviews', label: 'Đánh giá', icon: <FaStar /> },
+        ],
+    },
+    {
+        title: 'Kỹ thuật & Bảo trì',
+        items: [
+            { page: 'projects', label: 'Công trình', icon: <FaBuilding /> },
+            { page: 'schedule', label: 'Lịch công việc', icon: <FaCalendarCheck /> },
+        ],
+    },
+    {
+        title: 'Kế toán',
+        items: [
+            { page: 'invoices', label: 'Hóa đơn & công nợ', icon: <FaFileInvoiceDollar /> },
+            { page: 'reports', label: 'Thống kê', icon: <FaChartBar /> },
+        ],
+    },
+    {
+        title: 'Hệ thống',
+        items: [
+            { page: 'products', label: 'Sản phẩm', icon: <FaBoxOpen /> },
+            { page: 'documents', label: 'Tài liệu', icon: <FaBook /> },
+            { page: 'users', label: 'Tài khoản & phân quyền', icon: <FaUserShield /> },
+            { page: 'settings', label: 'Cài đặt hệ thống', icon: <FaCog /> },
+        ],
+    },
+    { items: [{ page: 'profile', label: 'Hồ sơ cá nhân', icon: <FaUserCog /> }] },
+];
+
+const pathOf = (page: string) => (page ? `/portal/${page}` : '/portal');
+
+const PortalLayout = () => {
+    const { db, user } = useStore();
     const location = useLocation();
     const navigate = useNavigate();
     const screens = Grid.useBreakpoint();
     const [drawerOpen, setDrawerOpen] = useState(false);
 
-    const groups = useMemo<{ title?: string; items: NavItem[] }[]>(
-        () => [
-            { items: [{ key: '/portal', label: 'Tổng quan', icon: <FaTachometerAlt />, perm: 'dashboard.view' }] },
-            {
-                title: 'Kinh doanh & CSKH',
-                items: [
-                    {
-                        key: '/portal/chat', label: 'Tư vấn trực tuyến', icon: <FaComments />, perm: 'chat.reply',
-                        badge: db.chats.filter((c) => c.status === 'open' && c.unreadByStaff > 0).length,
-                    },
-                    {
-                        key: '/portal/quotes', label: 'Yêu cầu báo giá', icon: <FaFileSignature />, perm: 'quotes.manage',
-                        badge: db.quotes.filter((q) => q.status === 'new').length,
-                    },
-                    {
-                        key: '/portal/orders', label: 'Đơn hàng', icon: <FaShoppingBag />, perm: 'orders.manage',
-                        badge: db.orders.filter((o) => o.status === 'pending').length,
-                    },
-                    { key: '/portal/reviews', label: 'Đánh giá', icon: <FaStar />, perm: 'reviews.manage' },
-                ],
-            },
-            {
-                title: 'Kỹ thuật & Bảo trì',
-                items: [
-                    { key: '/portal/projects', label: 'Công trình', icon: <FaBuilding />, perm: 'projects.view' },
-                    {
-                        key: '/portal/schedule', label: 'Lịch công việc', icon: <FaCalendarCheck />, perm: 'maintenance.update',
-                        badge: db.workOrders.filter((w) => w.technicianId === user?.id && w.status === 'pending').length,
-                    },
-                ],
-            },
-            {
-                title: 'Kế toán',
-                items: [
-                    { key: '/portal/invoices', label: 'Hóa đơn & công nợ', icon: <FaFileInvoiceDollar />, perm: 'invoices.manage' },
-                    { key: '/portal/reports', label: 'Thống kê', icon: <FaChartBar />, perm: 'reports.view' },
-                ],
-            },
-            {
-                title: 'Hệ thống',
-                items: [
-                    { key: '/portal/products', label: 'Sản phẩm', icon: <FaBoxOpen />, perm: 'products.manage' },
-                    { key: '/portal/documents', label: 'Tài liệu', icon: <FaBook />, perm: 'documents.manage' },
-                    { key: '/portal/users', label: 'Tài khoản & phân quyền', icon: <FaUserShield />, perm: 'users.manage' },
-                    { key: '/portal/settings', label: 'Cài đặt hệ thống', icon: <FaCog />, perm: 'settings.manage' },
-                ],
-            },
-            { items: [{ key: '/portal/profile', label: 'Hồ sơ cá nhân', icon: <FaUserCog /> }] },
-        ],
-        [db.chats, db.quotes, db.orders, db.workOrders, user?.id],
-    );
+    // Chưa đăng nhập → về trang đăng nhập. Khách hàng không được vào khu nội bộ.
+    if (!user) return <Navigate to={`/portal/login?redirect=${location.pathname}`} replace />;
+    if (user.role === 'customer') return <Forbidden />;
 
-    const menuItems: MenuProps['items'] = groups
-        .map((g) => ({ ...g, items: g.items.filter((i) => !i.perm || can(i.perm)) }))
-        .filter((g) => g.items.length)
-        .map((g, idx) => {
-            const children = g.items.map((i) => ({
-                key: i.key,
-                icon: i.icon,
+    // Trang hiện tại, ví dụ /portal/chat → 'chat'
+    const currentPage = location.pathname.split('/')[2] ?? '';
+
+    // Số việc đang chờ, hiện thành chấm đỏ cạnh menu
+    const badges: Record<string, number> = {
+        chat: db.chats.filter((c) => c.status === 'open' && c.unreadByStaff > 0).length,
+        quotes: db.quotes.filter((q) => q.status === 'new').length,
+        orders: db.orders.filter((o) => o.status === 'pending').length,
+        schedule: db.workOrders.filter((w) => w.technicianId === user.id && w.status === 'pending').length,
+    };
+
+    // Dựng menu antd từ MENU, bỏ các trang vai trò này không được mở
+    const menuItems: MenuProps['items'] = [];
+    for (const group of MENU) {
+        const items = group.items
+            .filter((item) => canOpen(user.role, item.page))
+            .map((item) => ({
+                key: pathOf(item.page),
+                icon: item.icon,
                 label: (
                     <span className="flex items-center justify-between gap-2">
-                        {i.label}
-                        {!!i.badge && <Badge count={i.badge} size="small" />}
+                        {item.label}
+                        {!!badges[item.page] && <Badge count={badges[item.page]} size="small" />}
                     </span>
                 ),
             }));
-            return g.title ? { type: 'group' as const, key: `g${idx}`, label: g.title, children } : children;
-        })
-        .flat();
-
-    const allKeys = groups.flatMap((g) => g.items.map((i) => i.key));
-    const selectedKey =
-        allKeys
-            .filter((k) => location.pathname === k || location.pathname.startsWith(`${k}/`))
-            .sort((a, b) => b.length - a.length)[0] ?? '/portal';
+        if (items.length === 0) continue;
+        if (group.title) menuItems.push({ type: 'group', key: group.title, label: group.title, children: items });
+        else menuItems.push(...items);
+    }
 
     const menu = (
         <Menu
             mode="inline"
-            selectedKeys={[selectedKey]}
+            selectedKeys={[pathOf(currentPage)]}
             items={menuItems}
             onClick={({ key }) => {
                 navigate(key);
@@ -142,10 +132,10 @@ const PortalLayoutInner = () => {
     const sidebarHeader = (
         <div className="px-4 py-4 border-b border-[var(--border)]">
             <Link to="/portal">
-                <Logo size={32} small />
+                <Logo small />
             </Link>
             <div className="mt-3 text-xs text-[var(--text)]">
-                Khu vực nội bộ · <b className="text-[var(--text-h)]">{user ? ROLE_LABELS[user.role] : ''}</b>
+                Khu vực nội bộ · <b className="text-[var(--text-h)]">{ROLE_LABELS[user.role]}</b>
             </div>
         </div>
     );
@@ -185,18 +175,12 @@ const PortalLayoutInner = () => {
                     <AccountMenu />
                 </header>
                 <main className="flex-1 p-4 sm:p-6">
-                    <Outlet />
+                    {/* Trang không thuộc vai trò này → 403 */}
+                    {canOpen(user.role, currentPage) ? <Outlet /> : <Forbidden />}
                 </main>
             </div>
         </div>
     );
 };
-
-/** Thông báo trong trang nội bộ tính theo phiên NHÂN VIÊN. */
-const PortalLayout = () => (
-    <NotificationProvider>
-        <PortalLayoutInner />
-    </NotificationProvider>
-);
 
 export default PortalLayout;

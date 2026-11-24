@@ -1,6 +1,6 @@
 import { Card, Steps } from 'antd';
 import { CheckCircleFilled } from '@ant-design/icons';
-import { SectionTitle } from '../../componentmain/ui';
+import { SectionTitle } from '../../components/ui';
 
 /** Chế độ bảo hành & hậu mãi (trang Giới thiệu). */
 const POLICIES = [

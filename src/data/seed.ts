@@ -1,14 +1,14 @@
-import type { ChatThread, Db, Invoice, Order, Project, Quote, Review, User, WorkOrder } from '../types';
-import { addDays, addMonths, daysFromNow, hoursAgo } from '../utils/format';
-import { ROLE_DEFAULT_PERMISSIONS } from './constants';
-import { SEED_PRODUCTS } from './products';
-import { SEED_DOCUMENTS } from './content';
+import type { ChatThread, Db, DocItem, Invoice, Order, Project, Quote, Review, User, WorkOrder } from '../types';
+import { addDays, addMonths, daysFromNow, hoursAgo } from '../utils';
+import { PRODUCTS } from './products';
 
 /**
- * Dữ liệu mẫu cho bản demo. Ngày tháng tính tương đối theo hôm nay
- * nên lịch bảo trì, hóa đơn quá hạn... luôn "đúng thời điểm" khi mở app.
+ * DỮ LIỆU BAN ĐẦU CỦA APP (thay cho database).
+ * App đọc thẳng từ file này mỗi lần mở / tải lại trang — sửa ở đây là thấy ngay.
+ * Ngày tháng tính tương đối theo hôm nay (daysFromNow) nên lịch bảo trì, hóa đơn quá hạn...
+ * luôn "đúng thời điểm" khi mở app.
  *
- * Tài khoản demo (mật khẩu chung 123456): xem DEMO_ACCOUNTS bên dưới.
+ * Sản phẩm nằm riêng ở products.ts. Tài khoản demo (mật khẩu chung 123456): xem DEMO_ACCOUNTS.
  */
 
 const PASSWORD = '123456';
@@ -16,67 +16,68 @@ const PASSWORD = '123456';
 const users: User[] = [
     {
         id: 'u-admin', name: 'Vũ Quang Huy', email: 'admin@firetech.vn', phone: '0962254523', password: PASSWORD,
-        role: 'admin', position: 'Quản trị hệ thống', permissions: ROLE_DEFAULT_PERMISSIONS.admin, status: 'active',
+        role: 'admin', position: 'Quản trị hệ thống', status: 'active',
         createdAt: daysFromNow(-900),
     },
     {
         id: 'u-sales1', name: 'Nguyễn Thu Hà', email: 'tuvan@firetech.vn', phone: '0904111222', password: PASSWORD,
-        role: 'sales', position: 'Tư vấn viên', permissions: ROLE_DEFAULT_PERMISSIONS.sales, status: 'active',
+        role: 'sales', position: 'Tư vấn viên', status: 'active',
         createdAt: daysFromNow(-600),
     },
     {
         id: 'u-sales2', name: 'Lê Minh Quân', email: 'kinhdoanh@firetech.vn', phone: '0904333444', password: PASSWORD,
-        role: 'sales', position: 'Nhân viên kinh doanh dự án', permissions: ROLE_DEFAULT_PERMISSIONS.sales, status: 'active',
+        role: 'sales', position: 'Nhân viên kinh doanh dự án', status: 'active',
         createdAt: daysFromNow(-420),
     },
     {
         id: 'u-tech1', name: 'Trần Văn Hùng', email: 'kythuat@firetech.vn', phone: '0912555666', password: PASSWORD,
-        role: 'technician', position: 'Kỹ thuật lắp đặt', permissions: ROLE_DEFAULT_PERMISSIONS.technician, status: 'active',
+        role: 'technician', position: 'Kỹ thuật lắp đặt', status: 'active',
         createdAt: daysFromNow(-800),
     },
     {
         id: 'u-tech2', name: 'Phạm Đức Long', email: 'baotri@firetech.vn', phone: '0912777888', password: PASSWORD,
-        role: 'technician', position: 'Kỹ thuật bảo trì', permissions: ROLE_DEFAULT_PERMISSIONS.technician, status: 'active',
+        role: 'technician', position: 'Kỹ thuật bảo trì', status: 'active',
         createdAt: daysFromNow(-500),
     },
     {
         id: 'u-acc', name: 'Đỗ Thị Mai', email: 'ketoan@firetech.vn', phone: '0913999000', password: PASSWORD,
-        role: 'accountant', position: 'Kế toán', permissions: ROLE_DEFAULT_PERMISSIONS.accountant, status: 'active',
+        role: 'accountant', position: 'Kế toán', status: 'active',
         createdAt: daysFromNow(-700),
     },
     {
         id: 'u-cus1', name: 'Nguyễn Văn Bình', email: 'khachhang@gmail.com', phone: '0988123456', password: PASSWORD,
-        role: 'customer', permissions: [], status: 'active', createdAt: daysFromNow(-400),
+        role: 'customer', status: 'active', createdAt: daysFromNow(-400),
         customerType: 'business', company: 'Công ty TNHH May Hưng Thịnh', taxCode: '0901234567',
         address: 'KCN Phố Nối A, Văn Lâm, Hưng Yên',
     },
     {
         id: 'u-cus2', name: 'Trần Thị Lan', email: 'lan.tran@gmail.com', phone: '0977222333', password: PASSWORD,
-        role: 'customer', permissions: [], status: 'active', createdAt: daysFromNow(-160),
+        role: 'customer', status: 'active', createdAt: daysFromNow(-160),
         customerType: 'personal', address: 'Ngõ 120 Hoàng Quốc Việt, Cầu Giấy, Hà Nội',
     },
     {
         id: 'u-cus3', name: 'Hoàng Minh Tuấn', email: 'hotay.hotel@gmail.com', phone: '0243888999', password: PASSWORD,
-        role: 'customer', permissions: [], status: 'active', createdAt: daysFromNow(-720),
+        role: 'customer', status: 'active', createdAt: daysFromNow(-720),
         customerType: 'business', company: 'Khách sạn Hồ Tây', taxCode: '0102345678',
         address: 'Số 18 Quảng An, Tây Hồ, Hà Nội',
     },
     {
         id: 'u-cus4', name: 'Đặng Quốc Việt', email: 'logistics.donganh@gmail.com', phone: '0966444555', password: PASSWORD,
-        role: 'customer', permissions: [], status: 'active', createdAt: daysFromNow(-560),
+        role: 'customer', status: 'active', createdAt: daysFromNow(-560),
         customerType: 'business', company: 'Công ty CP Logistics Đông Anh', taxCode: '0108765432',
         address: 'Xã Uy Nỗ, Đông Anh, Hà Nội', pendingProjectCode: 'CT-2022-077',
     },
 ];
 
+/** Tài khoản dùng thử hiện ở trang đăng nhập (mật khẩu 123456). */
 export const DEMO_ACCOUNTS = [
-    { role: 'customer', label: 'Khách hàng (doanh nghiệp)', email: 'khachhang@gmail.com' },
-    { role: 'customer', label: 'Khách hàng (cá nhân)', email: 'lan.tran@gmail.com' },
-    { role: 'admin', label: 'Quản trị viên', email: 'admin@firetech.vn' },
-    { role: 'sales', label: 'Tư vấn viên', email: 'tuvan@firetech.vn' },
-    { role: 'technician', label: 'Kỹ thuật bảo trì', email: 'baotri@firetech.vn' },
-    { role: 'accountant', label: 'Kế toán', email: 'ketoan@firetech.vn' },
-] as const;
+    { label: 'Khách hàng (doanh nghiệp)', email: 'khachhang@gmail.com', staff: false },
+    { label: 'Khách hàng (cá nhân)', email: 'lan.tran@gmail.com', staff: false },
+    { label: 'Quản trị viên', email: 'admin@firetech.vn', staff: true },
+    { label: 'Tư vấn viên', email: 'tuvan@firetech.vn', staff: true },
+    { label: 'Kỹ thuật bảo trì', email: 'baotri@firetech.vn', staff: true },
+    { label: 'Kế toán', email: 'ketoan@firetech.vn', staff: true },
+];
 
 const device = (productId: string, quantity: number, location: string, installedDaysAgo: number, warrantyMonths: number) => {
     const installedAt = daysFromNow(-installedDaysAgo);
@@ -177,7 +178,7 @@ const workOrders: WorkOrder[] = [
     { id: 'w7', code: 'CV-1018', projectId: 'pj3', technicianId: 'u-tech2', type: 'maintenance', date: daysFromNow(-95), status: 'done', note: 'Bảo trì quý.', report: 'Ắc quy tủ trung tâm yếu.' },
 ];
 
-const price = (id: string) => SEED_PRODUCTS.find((p) => p.id === id)?.price ?? 0;
+const price = (id: string) => PRODUCTS.find((p) => p.id === id)?.price ?? 0;
 
 const makeOrder = (
     n: number, customerId: string, items: [string, number][], daysAgo: number, status: Order['status'],
@@ -277,16 +278,126 @@ const chats: ChatThread[] = [
     },
 ];
 
-export const createSeed = (): Db => ({
+const documents: DocItem[] = [
+    {
+        id: 'd1', type: 'guide', category: 'binh-chua-chay', updatedAt: daysFromNow(-12),
+        title: 'Hướng dẫn sử dụng bình chữa cháy bột ABC (quy tắc 4 bước)',
+        summary: 'Thao tác chuẩn với bình bột xách tay — áp dụng cho bình 1kg đến 8kg.',
+        steps: [
+            'Xách bình đến gần đám cháy, đứng ở đầu gió, cách đám cháy 1,5 – 2 m.',
+            'Lắc bình vài lần để bột tơi, sau đó rút chốt an toàn.',
+            'Một tay cầm vòi, hướng loa phun vào gốc lửa (không phun vào ngọn lửa).',
+            'Bóp cò phun và quét qua lại cho đến khi lửa tắt hẳn.',
+            'Sau khi dùng, gửi bình đi nạp lại — bình đã phun dù một ít cũng phải nạp lại.',
+        ],
+    },
+    {
+        id: 'd2', type: 'guide', category: 'binh-chua-chay', updatedAt: daysFromNow(-30),
+        title: 'Sử dụng bình khí CO2 an toàn',
+        summary: 'Lưu ý quan trọng để tránh bỏng lạnh và ngạt khí khi dùng bình CO2.',
+        steps: [
+            'Ngắt điện khu vực cháy nếu có thể.',
+            'Rút chốt, cầm vào tay cầm cách nhiệt — không cầm trực tiếp vào loa phun (nhiệt độ rất thấp, gây bỏng lạnh).',
+            'Hướng loa vào gốc lửa, bóp cò và phun dứt điểm.',
+            'Trong phòng kín, rời khỏi phòng ngay sau khi dập lửa và thông gió trước khi quay lại.',
+        ],
+    },
+    {
+        id: 'd3', type: 'guide', category: 'bao-ho', updatedAt: daysFromNow(-45),
+        title: 'Cách dùng chăn chiên dập lửa trong bếp',
+        summary: 'Xử lý cháy chảo dầu, cháy nhỏ trong bếp gia đình.',
+        steps: [
+            'Kéo mạnh hai dây vải để rút chăn ra khỏi túi.',
+            'Cầm hai góc chăn, cuộn mép chăn che tay.',
+            'Trùm kín đám cháy, đẩy chăn ra xa người.',
+            'Tắt bếp, khóa van gas; giữ chăn ít nhất 15 phút cho nguội hẳn.',
+        ],
+    },
+    {
+        id: 'd4', type: 'guide', category: 'bao-ho', updatedAt: daysFromNow(-60),
+        title: 'Hướng dẫn đeo mặt nạ phòng độc thoát hiểm',
+        summary: 'Đeo đúng cách trong 30 giây để thoát qua vùng khói.',
+        steps: [
+            'Xé túi, lấy mặt nạ và tháo hai nút bịt ở bộ lọc.',
+            'Kéo mặt nạ trùm qua đầu, chỉnh dây cho kín cổ.',
+            'Thở bình thường, cúi thấp và di chuyển theo đèn Exit ra lối thoát.',
+        ],
+    },
+    {
+        id: 'd5', type: 'guide', category: 'voi-tru', updatedAt: daysFromNow(-75),
+        title: 'Triển khai vòi & lăng chữa cháy vách tường',
+        summary: 'Thao tác 2 người với họng nước chữa cháy trong nhà.',
+        steps: [
+            'Mở tủ, lấy cuộn vòi và lăng phun.',
+            'Lăn vòi theo hướng đám cháy, tránh để vòi bị gập.',
+            'Lắp một đầu vòi vào họng nước, đầu còn lại vào lăng phun.',
+            'Người cầm lăng ra hiệu, người còn lại mở van họng nước từ từ.',
+        ],
+    },
+    {
+        id: 'd6', type: 'checklist', updatedAt: daysFromNow(-20),
+        title: 'Checklist tự kiểm tra thiết bị PCCC hằng tháng',
+        summary: 'Danh sách việc khách hàng nên tự kiểm tra giữa các kỳ bảo trì.',
+        steps: [
+            'Kim đồng hồ bình bột nằm trong vùng xanh.',
+            'Chốt an toàn và kẹp chì còn nguyên.',
+            'Đèn Exit và đèn sự cố sáng khi nhấn nút TEST.',
+            'Tủ trung tâm báo cháy không có đèn báo lỗi.',
+            'Lối thoát nạn, cửa thoát hiểm không bị khóa hoặc chắn.',
+        ],
+    },
+    {
+        id: 'd7', type: 'standard', category: 'binh-chua-chay', updatedAt: daysFromNow(-120),
+        title: 'TCVN 7435-2 – Kiểm tra và bảo dưỡng bình chữa cháy xách tay',
+        summary: 'Tóm tắt yêu cầu kiểm tra định kỳ bình chữa cháy. Nội dung mang tính tham khảo — đối chiếu văn bản gốc khi lập hồ sơ.',
+        steps: [
+            'Kiểm tra bên ngoài định kỳ: vỏ bình, đồng hồ áp suất, vòi phun, nhãn.',
+            'Bảo dưỡng định kỳ theo khuyến cáo nhà sản xuất và tiêu chuẩn.',
+            'Lập sổ theo dõi, ghi ngày kiểm tra và người thực hiện cho từng bình.',
+        ],
+    },
+    {
+        id: 'd8', type: 'standard', category: 'bao-chay', updatedAt: daysFromNow(-150),
+        title: 'TCVN 5738:2021 – Hệ thống báo cháy tự động',
+        summary: 'Tóm tắt yêu cầu thiết kế, lắp đặt hệ thống báo cháy. Nội dung mang tính tham khảo.',
+        steps: [
+            'Lựa chọn loại đầu báo phù hợp đặc điểm khu vực bảo vệ.',
+            'Bố trí nút ấn báo cháy tại lối thoát nạn, chân cầu thang.',
+            'Tủ trung tâm đặt nơi có người trực 24/24, có nguồn dự phòng.',
+        ],
+    },
+    {
+        id: 'd9', type: 'regulation', updatedAt: daysFromNow(-200),
+        title: 'QCVN 06:2022/BXD – An toàn cháy cho nhà và công trình',
+        summary: 'Quy chuẩn về lối thoát nạn, ngăn cháy lan, phân loại công trình. Nội dung mang tính tham khảo.',
+        steps: [
+            'Yêu cầu về số lượng và kích thước lối thoát nạn.',
+            'Giải pháp ngăn cháy, chống cháy lan giữa các khoang.',
+            'Yêu cầu về hệ thống chiếu sáng sự cố và chỉ dẫn thoát nạn.',
+        ],
+    },
+    {
+        id: 'd10', type: 'regulation', updatedAt: daysFromNow(-90),
+        title: 'Luật Phòng cháy, chữa cháy và cứu nạn, cứu hộ 2024',
+        summary: 'Trách nhiệm của chủ cơ sở về PCCC. Nội dung mang tính tham khảo — đối chiếu văn bản gốc.',
+        steps: [
+            'Trách nhiệm trang bị phương tiện PCCC và duy trì hoạt động.',
+            'Tổ chức huấn luyện, diễn tập cho lực lượng PCCC cơ sở.',
+            'Kiểm tra, bảo dưỡng phương tiện PCCC định kỳ.',
+        ],
+    },
+];
+
+export const SEED_DATA: Db = {
     users,
-    products: SEED_PRODUCTS,
+    products: PRODUCTS,
     projects,
     workOrders,
     orders,
     quotes,
     invoices,
     reviews,
-    documents: SEED_DOCUMENTS.map(({ daysAgo, ...doc }) => ({ ...doc, updatedAt: daysFromNow(-daysAgo) })),
+    documents,
     chats,
     settings: {
         companyName: 'Công ty CP Công nghệ PCCC Fire Tech',
@@ -297,4 +408,4 @@ export const createSeed = (): Db => ({
         workingHours: '8:00 – 17:30 (Thứ 2 – Thứ 7) · Cứu hộ 24/7',
         defaultMaintenanceMonths: 6,
     },
-});
+};

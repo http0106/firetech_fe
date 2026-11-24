@@ -2,18 +2,14 @@ import { useState } from 'react';
 import { Button, Form, Input, InputNumber, Modal, Radio, Result } from 'antd';
 import { FaFileInvoiceDollar, FaShoppingBag, FaTrash } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
-import ProductThumb from '../componentmain/ProductThumb';
-import QuoteForm from '../componentmain/QuoteForm';
-import { EmptyState } from '../componentmain/ui';
-import { maxQtyOf, useShop } from '../context/ShopContext';
-import { useStore } from '../context/StoreContext';
-import { useAuth } from '../context/AuthContext';
-import { nextCode } from '../utils/business';
-import { formatPrice, todayISO, uid } from '../utils/format';
+import { ProductThumb, EmptyState } from '../components/ui';
+import QuoteForm from '../components/QuoteForm';
+import { useStore, useLookup } from '../store';
+import { nextCode, formatPrice, todayISO, uid } from '../utils';
 import type { Order } from '../types';
 
 /**
- * GIAO DIỆN MỚI — Giỏ hàng & đặt hàng (trước đây website chưa có giỏ hàng, mọi thứ phải báo giá qua admin).
+ * Giỏ hàng & đặt hàng.
  * Hai lựa chọn:
  *  1. Đặt hàng ngay (cần đăng nhập) → đơn vào /portal/orders, khách theo dõi ở /account/orders.
  *  2. Gửi yêu cầu báo giá cho cả giỏ (không cần đăng nhập) — phù hợp nhà thầu / số lượng lớn.
@@ -25,15 +21,18 @@ interface CheckoutValues {
 }
 
 const Cart = () => {
-    // Cùng nguồn dữ liệu với giỏ hàng trên Header → số lượng, tổng tiền luôn khớp
-    const { lines, cartCount, cartTotal: total, setQuantity, removeFromCart, clearCart } = useShop();
-    const { db, update } = useStore();
-    const { user } = useAuth();
+    const { db, add, user, cart, setQuantity, removeFromCart, clearCart } = useStore();
+    const lookup = useLookup();
     const navigate = useNavigate();
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [quoteOpen, setQuoteOpen] = useState(false);
     const [placed, setPlaced] = useState<Order | null>(null);
-    const quoteItems = lines.map((l) => ({ productId: l.productId, quantity: l.quantity }));
+    const isCustomer = user?.role === 'customer'; // chỉ tài khoản khách hàng mới đặt hàng được
+
+    const lines = cart
+        .map((i) => ({ ...i, product: lookup.product(i.productId) }))
+        .filter((l): l is typeof l & { product: NonNullable<typeof l.product> } => !!l.product);
+    const total = lines.reduce((s, l) => s + l.product.price * l.quantity, 0);
 
     const placeOrder = (v: CheckoutValues) => {
         const order: Order = {
@@ -48,7 +47,7 @@ const Cart = () => {
             note: v.note,
             createdAt: todayISO(),
         };
-        update('orders', (list) => [order, ...list]);
+        add('orders', order);
         clearCart();
         setCheckoutOpen(false);
         setPlaced(order);
@@ -82,7 +81,7 @@ const Cart = () => {
 
     return (
         <div className="py-6">
-            <h1 className="m-0 tracking-normal text-2xl font-extrabold text-[var(--text-h)] mb-5">Giỏ hàng ({cartCount} sản phẩm)</h1>
+            <h1 className="m-0 tracking-normal text-2xl font-extrabold text-[var(--text-h)] mb-5">Giỏ hàng ({lines.length})</h1>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px] items-start">
                 <div className="rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-[var(--border)]">
                     {lines.map((l) => (
@@ -97,8 +96,8 @@ const Cart = () => {
                                     <div className="text-sm font-semibold text-red-600 mt-1">{formatPrice(l.product.price)}</div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <InputNumber min={1} max={Math.max(1, maxQtyOf(l.product))} value={l.quantity} onChange={(v) => v && setQuantity(l.productId, v)} className="w-20" />
-                                    <span className="w-28 text-right font-bold text-[var(--text-h)]">{formatPrice(l.subtotal)}</span>
+                                    <InputNumber min={1} max={99} value={l.quantity} onChange={(v) => v && setQuantity(l.productId, v)} className="w-20" />
+                                    <span className="w-28 text-right font-bold text-[var(--text-h)]">{formatPrice(l.product.price * l.quantity)}</span>
                                     <Button type="text" danger aria-label="Xóa" icon={<FaTrash />} onClick={() => removeFromCart(l.productId)} />
                                 </div>
                             </div>
@@ -115,7 +114,7 @@ const Cart = () => {
                         <span className="text-xl font-extrabold text-red-600">{formatPrice(total)}</span>
                     </div>
 
-                    {user ? (
+                    {isCustomer ? (
                         <Button type="primary" danger size="large" block onClick={() => setCheckoutOpen(true)}>Đặt hàng</Button>
                     ) : (
                         <Button type="primary" danger size="large" block onClick={() => navigate('/login?redirect=/cart')}>
@@ -166,7 +165,7 @@ const Cart = () => {
             </Modal>
 
             <Modal title="Yêu cầu báo giá cho giỏ hàng" open={quoteOpen} onCancel={() => setQuoteOpen(false)} footer={null} destroyOnHidden width={560}>
-                <QuoteForm items={quoteItems} compact />
+                <QuoteForm items={cart} compact />
             </Modal>
         </div>
     );

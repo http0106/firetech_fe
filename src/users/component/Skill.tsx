@@ -1,4 +1,3 @@
-
 import { FaAward, FaHandshake, FaHeadset, FaShieldAlt } from 'react-icons/fa';
 
 const stats = [

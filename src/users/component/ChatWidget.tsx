@@ -1,104 +1,92 @@
 import { useEffect, useRef, useState } from 'react';
 import { Avatar, Button, Form, Input } from 'antd';
 import { FaHeadset, FaPaperPlane, FaTimes } from 'react-icons/fa';
-import type { ChatMessage, ChatThread } from '../../types';
-import { useLookup, useStore } from '../../context/StoreContext';
-import { useAuth } from '../../context/AuthContext';
-import { formatTime, nowISO, uid } from '../../utils/format';
+import type { ChatMessage, ChatThread, User } from '../../types';
+import { useLookup, useStore } from '../../store';
+import { formatTime, nowISO, uid } from '../../utils';
 
 /**
- * GIAO DIỆN MỚI — Khung chat tư vấn trực tuyến (khách vãng lai & khách hàng).
+ * Khung chat tư vấn trực tuyến (khách vãng lai & khách hàng).
  * - Khách vãng lai: nhập tên + SĐT trước khi chat (để tư vấn viên gọi lại khi offline).
  * - Khách hàng đã đăng nhập: chat ngay, lịch sử gắn với tài khoản.
  * - Tin nhắn đi vào hộp thư của Tư vấn viên tại /portal/chat.
  * - Nếu chưa có tư vấn viên trả lời, bot gửi lời chào tự động một lần.
- * Khi có backend: thay `update('chats', ...)` bằng WebSocket/Socket.IO.
+ * Khi có backend: tin nhắn gửi lên server qua PATCH /chats/:id (xem api.ts).
  */
-const GUEST_THREAD_KEY = 'firetech-chat-thread';
+/**
+ * Tìm cuộc chat của người đang xem website:
+ * - Khách hàng đã đăng nhập → cuộc chat đang mở gắn với tài khoản.
+ * - Khách vãng lai → cuộc chat có id = guestChatId (nhớ trên trình duyệt).
+ */
+const findMyThread = (chats: ChatThread[], user: User | null, guestChatId: string | null) =>
+    user?.role === 'customer'
+        ? chats.find((c) => c.customerId === user.id && c.status === 'open')
+        : chats.find((c) => c.id === guestChatId);
 
 const QUICK_QUESTIONS = ['Tư vấn bình chữa cháy cho gia đình', 'Báo giá hệ thống báo cháy', 'Đặt lịch bảo trì', 'Nạp sạc bình chữa cháy'];
 
 const ChatWidget = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-    const { db, update } = useStore();
+    const { db, add, edit, user, guestChatId, setGuestChatId } = useStore();
     const lookup = useLookup();
-    const { user } = useAuth();
     const [text, setText] = useState('');
-    const [guestThreadId, setGuestThreadId] = useState<string | null>(() => {
-        try {
-            return localStorage.getItem(GUEST_THREAD_KEY);
-        } catch {
-            return null;
-        }
-    });
     const bottomRef = useRef<HTMLDivElement>(null);
 
     const isCustomer = user?.role === 'customer';
-    const thread: ChatThread | undefined = isCustomer
-        ? db.chats.find((c) => c.customerId === user.id && c.status === 'open')
-        : db.chats.find((c) => c.id === guestThreadId);
+    const thread = findMyThread(db.chats, user, guestChatId);
 
+    // Khách vãng lai chưa có cuộc chat → hỏi tên + SĐT trước
     const needsIntro = !isCustomer && !thread;
     const staff = lookup.user(thread?.assignedTo);
 
     // Đánh dấu đã đọc khi mở khung chat
     useEffect(() => {
-        if (open && thread && thread.unreadByCustomer > 0)
-            update('chats', (list) => list.map((c) => (c.id === thread.id ? { ...c, unreadByCustomer: 0 } : c)));
-    }, [open, thread, update]);
+        if (open && thread && thread.unreadByCustomer > 0) edit('chats', thread.id, { unreadByCustomer: 0 });
+    }, [open, thread, edit]);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [thread?.messages.length, open]);
 
-    const createThread = (guestName: string, guestPhone?: string): ChatThread => {
-        const t: ChatThread = {
-            id: uid('c'),
-            customerId: isCustomer ? user.id : undefined,
-            guestName,
-            guestPhone,
-            messages: [],
-            status: 'open',
-            unreadByStaff: 0,
-            unreadByCustomer: 0,
-            updatedAt: nowISO(),
-        };
-        update('chats', (list) => [t, ...list]);
-        if (!isCustomer) {
-            setGuestThreadId(t.id);
-            try {
-                localStorage.setItem(GUEST_THREAD_KEY, t.id);
-            } catch {
-                /* bỏ qua */
-            }
-        }
-        return t;
-    };
-
-    const send = (content: string, explicitTarget?: ChatThread) => {
+    /**
+     * Gửi tin nhắn. Chưa có cuộc chat thì tạo mới kèm luôn tin nhắn này (1 lần gọi API).
+     * Khách vãng lai: guestName / guestPhone lấy từ form giới thiệu.
+     */
+    const send = (content: string, guestName = user?.name ?? 'Khách', guestPhone = user?.phone) => {
         const value = content.trim();
-        if (!value) return;
-        const target = explicitTarget ?? thread ?? createThread(user?.name ?? 'Khách', user?.phone);
-        const msg: ChatMessage = { id: uid('m'), from: 'customer', senderName: target.guestName, text: value, at: nowISO() };
-        const hasReply = target.messages.some((m) => m.from !== 'customer');
-        update('chats', (list) =>
-            list.map((c) =>
-                c.id === target.id ? { ...c, messages: [...c.messages, msg], unreadByStaff: c.unreadByStaff + 1, updatedAt: msg.at } : c,
-            ),
-        );
-        setText('');
+        if (!value && thread) return;
+        const name = thread?.guestName ?? guestName;
+        const oldMessages = thread?.messages ?? [];
+        const messages: ChatMessage[] = [...oldMessages];
+        if (value) messages.push({ id: uid('m'), from: 'customer', senderName: name, text: value, at: nowISO() });
 
-        if (!hasReply) {
-            window.setTimeout(() => {
-                const bot: ChatMessage = {
-                    id: uid('m'),
-                    from: 'bot',
-                    senderName: 'FireTech',
-                    text: `Chào ${target.guestName}! Cảm ơn bạn đã liên hệ FireTech. Tư vấn viên sẽ phản hồi trong ít phút (giờ hành chính). Trường hợp khẩn cấp vui lòng gọi hotline ${db.settings.hotline}.`,
-                    at: nowISO(),
-                };
-                update('chats', (list) => list.map((c) => (c.id === target.id ? { ...c, messages: [...c.messages, bot] } : c)));
-            }, 700);
+        // Tin nhắn đầu tiên → kèm lời chào tự động của FireTech
+        if (value && !oldMessages.some((m) => m.from !== 'customer'))
+            messages.push({
+                id: uid('m'),
+                from: 'bot',
+                senderName: 'FireTech',
+                text: `Chào ${name}! Cảm ơn bạn đã liên hệ FireTech. Tư vấn viên sẽ phản hồi trong ít phút (giờ hành chính). Trường hợp khẩn cấp vui lòng gọi hotline ${db.settings.hotline}.`,
+                at: nowISO(),
+            });
+
+        if (thread) {
+            edit('chats', thread.id, { messages, unreadByStaff: thread.unreadByStaff + 1, updatedAt: nowISO() });
+        } else {
+            const newThread: ChatThread = {
+                id: uid('c'),
+                customerId: isCustomer ? user.id : undefined,
+                guestName: name,
+                guestPhone,
+                messages,
+                status: 'open',
+                unreadByStaff: value ? 1 : 0,
+                unreadByCustomer: 0,
+                updatedAt: nowISO(),
+            };
+            add('chats', newThread);
+            if (!isCustomer) setGuestChatId(newThread.id); // nhớ cuộc chat của khách vãng lai
         }
+        setText('');
     };
 
     if (!open) return null;
@@ -128,10 +116,7 @@ const ChatWidget = ({ open, onClose }: { open: boolean; onClose: () => void }) =
                     <Form
                         layout="vertical"
                         requiredMark={false}
-                        onFinish={(v: { name: string; phone: string; question?: string }) => {
-                            const t = createThread(v.name, v.phone);
-                            if (v.question) send(v.question, t);
-                        }}
+                        onFinish={(v: { name: string; phone: string; question?: string }) => send(v.question ?? '', v.name, v.phone)}
                     >
                         <Form.Item name="name" label="Tên của bạn" rules={[{ required: true, message: 'Vui lòng nhập tên' }]}>
                             <Input placeholder="Nguyễn Văn A" />
@@ -220,21 +205,10 @@ const ChatWidget = ({ open, onClose }: { open: boolean; onClose: () => void }) =
     );
 };
 
-/** Số tin chưa đọc của khách (để hiện badge trên nút chat). */
+/** Số tin chưa đọc của khách (để hiện số trên nút chat). */
 export const useCustomerUnread = () => {
-    const { db } = useStore();
-    const { user } = useAuth();
-    let threadId: string | null = null;
-    try {
-        threadId = localStorage.getItem(GUEST_THREAD_KEY);
-    } catch {
-        /* bỏ qua */
-    }
-    const thread =
-        user?.role === 'customer'
-            ? db.chats.find((c) => c.customerId === user.id && c.status === 'open')
-            : db.chats.find((c) => c.id === threadId);
-    return thread?.unreadByCustomer ?? 0;
+    const { db, user, guestChatId } = useStore();
+    return findMyThread(db.chats, user, guestChatId)?.unreadByCustomer ?? 0;
 };
 
 export default ChatWidget;

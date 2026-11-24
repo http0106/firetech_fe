@@ -1,7 +1,7 @@
 import { Avatar, Rate } from 'antd';
 import type { ReactNode } from 'react';
 import type { Review } from '../../types';
-import { formatDate } from '../../utils/format';
+import { formatDate } from '../../utils';
 
 /** Danh sách đánh giá + phản hồi của Fire Tech. */
 const ReviewList = ({ reviews, renderTarget }: { reviews: Review[]; renderTarget?: (r: Review) => ReactNode }) => (

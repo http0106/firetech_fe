@@ -1,12 +1,13 @@
 import { Avatar, Grid, Menu } from 'antd';
 import { FaBuilding, FaClipboardList, FaFileSignature, FaHome, FaStar, FaUserEdit } from 'react-icons/fa';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Forbidden } from '../components/ui';
+import { useStore } from '../store';
 
 /**
- * GIAO DIỆN MỚI — Khu vực tài khoản khách hàng (/account), nằm trong website công khai
+ * Khu vực tài khoản khách hàng (/account), nằm trong website công khai
  * để khách vẫn dùng được Header (tìm kiếm, giỏ hàng).
- * Giải quyết: khách không nhớ ngày thi công, lịch bảo trì, thời hạn bảo hành.
+ * Chỉ tài khoản KHÁCH HÀNG được vào.
  */
 const ITEMS = [
     { key: '/account', label: 'Tổng quan', icon: <FaHome /> },
@@ -18,26 +19,28 @@ const ITEMS = [
 ];
 
 const AccountLayout = () => {
-    const { user } = useAuth();
+    const { user } = useStore();
     const location = useLocation();
     const navigate = useNavigate();
     const screens = Grid.useBreakpoint();
 
-    const selected =
-        ITEMS.map((i) => i.key)
-            .filter((k) => location.pathname === k || location.pathname.startsWith(`${k}/`))
-            .sort((a, b) => b.length - a.length)[0] ?? '/account';
+    // Chưa đăng nhập → về trang đăng nhập. Nhân viên không có trang này.
+    if (!user) return <Navigate to={`/login?redirect=${location.pathname}`} replace />;
+    if (user.role !== 'customer') return <Forbidden />;
+
+    // /account/projects/pj1 → mục "/account/projects"
+    const selected = '/' + location.pathname.split('/').slice(1, 3).join('/');
 
     return (
         <div className="py-6 grid gap-6 lg:grid-cols-[250px_minmax(0,1fr)] items-start">
             <aside className="rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 lg:sticky lg:top-36 overflow-hidden">
                 <div className="flex items-center gap-3 p-4 border-b border-[var(--border)]">
                     <Avatar size={44} className="shrink-0" style={{ backgroundColor: 'var(--text-h)', color: 'var(--bg)' }}>
-                        {user?.name.split(' ').pop()?.[0]}
+                        {user.name.split(' ').pop()?.[0]}
                     </Avatar>
                     <div className="min-w-0">
-                        <div className="font-semibold text-[var(--text-h)] truncate">{user?.name}</div>
-                        <div className="text-xs text-[var(--text)] truncate">{user?.company ?? user?.email}</div>
+                        <div className="font-semibold text-[var(--text-h)] truncate">{user.name}</div>
+                        <div className="text-xs text-[var(--text)] truncate">{user.company ?? user.email}</div>
                     </div>
                 </div>
                 <Menu

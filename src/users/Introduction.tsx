@@ -6,8 +6,8 @@ import Partner from './component/Partner';
 import FireScenarios from './component/FireScenarios';
 import WarrantyPolicy from './component/WarrantyPolicy';
 import ReviewList from './component/ReviewList';
-import { SectionTitle } from '../componentmain/ui';
-import { useLookup, useStore } from '../context/StoreContext';
+import { SectionTitle } from '../components/ui';
+import { useLookup, useStore } from '../store';
 
 /**
  * Trang Giới thiệu: giữ các phần cũ (Banner, AboutSection, Skill, Partner) và thêm theo yêu cầu dự án:

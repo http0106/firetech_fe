@@ -1,4 +1,4 @@
-import type { CategoryKey, Permission, Role, StandardKey } from '../types';
+import type { CategoryKey, Role, StandardKey } from '../types';
 
 export const CATEGORIES: { key: CategoryKey; label: string }[] = [
     { key: 'binh-chua-chay', label: 'Bình chữa cháy' },
@@ -41,58 +41,28 @@ export const ROLE_COLORS: Record<Role, string> = {
     accountant: 'green',
 };
 
-export const STAFF_ROLES: Role[] = ['sales', 'technician', 'accountant', 'admin'];
-
-export const PERMISSION_GROUPS: { group: string; items: { key: Permission; label: string }[] }[] = [
-    {
-        group: 'Chung',
-        items: [{ key: 'dashboard.view', label: 'Xem trang tổng quan' }],
-    },
-    {
-        group: 'Kinh doanh & CSKH',
-        items: [
-            { key: 'chat.reply', label: 'Trả lời tư vấn trực tuyến' },
-            { key: 'quotes.manage', label: 'Xử lý yêu cầu báo giá' },
-            { key: 'orders.manage', label: 'Quản lý đơn hàng' },
-            { key: 'reviews.manage', label: 'Phản hồi & kiểm duyệt đánh giá' },
-        ],
-    },
-    {
-        group: 'Kỹ thuật & Bảo trì',
-        items: [
-            { key: 'projects.view', label: 'Xem công trình & lịch sử bảo trì' },
-            { key: 'projects.manage', label: 'Quản lý công trình, phân công kỹ thuật' },
-            { key: 'maintenance.update', label: 'Nhận việc & cập nhật biên bản bảo trì' },
-        ],
-    },
-    {
-        group: 'Kế toán',
-        items: [
-            { key: 'invoices.manage', label: 'Quản lý hóa đơn & công nợ' },
-            { key: 'reports.view', label: 'Xem báo cáo thống kê' },
-        ],
-    },
-    {
-        group: 'Hệ thống',
-        items: [
-            { key: 'products.manage', label: 'Quản lý sản phẩm' },
-            { key: 'documents.manage', label: 'Quản lý tài liệu chuyên ngành' },
-            { key: 'users.manage', label: 'Quản lý tài khoản & phân quyền' },
-            { key: 'settings.manage', label: 'Cài đặt hệ thống' },
-        ],
-    },
-];
-
-export const ALL_PERMISSIONS: Permission[] = PERMISSION_GROUPS.flatMap((g) => g.items.map((i) => i.key));
-
-/** Bộ quyền gợi ý khi Admin tạo tài khoản theo vai trò — vẫn chỉnh tay được. */
-export const ROLE_DEFAULT_PERMISSIONS: Record<Role, Permission[]> = {
-    admin: ALL_PERMISSIONS,
+/* =====================================================================
+ * PHÂN QUYỀN — chỉ dựa vào VAI TRÒ, không có quyền riêng từng người.
+ *
+ * Danh sách trang trong /portal mà mỗi vai trò được mở.
+ * Tên trang = phần sau "/portal/", ví dụ 'chat' là /portal/chat.
+ * Trang Tổng quan (/portal) và Hồ sơ (/portal/profile): nhân viên nào cũng mở được.
+ * Muốn cho vai trò nào thêm/bớt trang → chỉ cần sửa danh sách dưới đây.
+ * ===================================================================== */
+export const ROLE_PAGES: Record<Role, string[]> = {
+    admin: ['chat', 'quotes', 'orders', 'reviews', 'projects', 'schedule', 'invoices', 'reports', 'products', 'documents', 'users', 'settings'],
+    sales: ['chat', 'quotes', 'orders', 'reviews', 'projects'],
+    technician: ['projects', 'schedule'],
+    accountant: ['orders', 'invoices', 'reports'],
     customer: [],
-    sales: ['dashboard.view', 'chat.reply', 'quotes.manage', 'orders.manage', 'reviews.manage', 'projects.view'],
-    technician: ['dashboard.view', 'projects.view', 'maintenance.update'],
-    accountant: ['dashboard.view', 'invoices.manage', 'orders.manage', 'reports.view'],
 };
+
+/** Vai trò này có được mở trang nội bộ `page` không? */
+export const canOpen = (role: Role, page: string) =>
+    page === '' || page === 'profile' || ROLE_PAGES[role].includes(page);
+
+/** Trang chính sau khi đăng nhập: khách hàng → /account, nhân viên → /portal. */
+export const homePathOf = (user: { role: Role }) => (user.role === 'customer' ? '/account' : '/portal');
 
 type StatusMap = Record<string, { label: string; color: string }>;
 

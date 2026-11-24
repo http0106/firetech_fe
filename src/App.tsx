@@ -1,29 +1,35 @@
-import './App.css'
+import { useLayoutEffect, useState } from 'react';
+import { App as AntApp, ConfigProvider, theme } from 'antd';
+import viVN from 'antd/locale/vi_VN';
 import { RouterProvider } from 'react-router-dom';
-import { ThemeProvider } from './context/ThemeContext';
-import { StoreProvider } from './context/StoreContext';
-import { AuthProvider } from './context/AuthContext';
-import { ShopProvider } from './context/ShopContext';
+import { StoreProvider } from './store';
 import { router } from './router/router';
 
 /**
- * Thứ tự provider (ngoài → trong):
- *  Theme (antd + message/notification) → Store (dữ liệu) → Auth (phiên đăng nhập) → Shop (giỏ hàng, so sánh).
- * Thông báo (NotificationProvider) nằm trong từng layout vì phụ thuộc phạm vi đăng nhập (khách / nội bộ).
- * Nút nổi hỗ trợ (Chat, Zalo, Hotline) và modal QR Zalo nằm trong layout/PublicLayout.tsx.
+ * Gốc ứng dụng:
+ *  ConfigProvider (tiếng Việt, sáng/tối cho Ant Design) → AntApp (để dùng message, modal)
+ *  → StoreProvider (dữ liệu, đăng nhập, giỏ hàng) → các trang (xem router/router.tsx).
  */
-function App() {
-  return (
-    <ThemeProvider>
-      <StoreProvider>
-        <AuthProvider>
-          <ShopProvider>
-            <RouterProvider router={router} />
-          </ShopProvider>
-        </AuthProvider>
-      </StoreProvider>
-    </ThemeProvider>
-  )
-}
+const App = () => {
+    // Sáng / tối: ban đầu theo cài đặt của máy; đổi bằng nút trong menu tài khoản (AccountMenu)
+    const [dark, setDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-export default App
+    // Gắn class "dark" lên thẻ <html> → CSS (index.css) và Tailwind (class dark:...) đổi màu.
+    // useLayoutEffect chạy trước khi vẽ màn hình nên không bị nháy trắng.
+    useLayoutEffect(() => {
+        document.documentElement.classList.toggle('dark', dark);
+    }, [dark]);
+
+    return (
+        <ConfigProvider locale={viVN} theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
+            {/* component={false}: không bọc thêm thẻ div → giữ kiểu chữ của index.css */}
+            <AntApp component={false}>
+                <StoreProvider dark={dark} toggleDark={() => setDark(!dark)}>
+                    <RouterProvider router={router} />
+                </StoreProvider>
+            </AntApp>
+        </ConfigProvider>
+    );
+};
+
+export default App;

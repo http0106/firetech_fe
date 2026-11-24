@@ -1,17 +1,13 @@
 import { Link } from 'react-router-dom';
 import { FaClock, FaEnvelope, FaMapMarkerAlt, FaPhoneAlt } from 'react-icons/fa';
 import { SiZalo } from 'react-icons/si';
-import Logo from '../componentmain/Logo';
-import { useStore } from '../context/StoreContext';
+import { Logo } from '../components/ui';
+import { useStore } from '../store';
 import { CATEGORIES } from '../data/constants';
 
 const YEAR = new Date().getFullYear();
 
-/**
- * GIAO DIỆN MỚI — Chân trang (Footer.tsx trước đây để trống).
- * Dùng cùng bộ biến màu của thiết kế cũ: nền --bg, viền --border, chữ --text / --text-h, hover #FF4D4D.
- * Thông tin công ty lấy từ Cài đặt hệ thống (Admin chỉnh trong /portal/settings).
- */
+/** Chân trang. Thông tin công ty lấy từ Cài đặt hệ thống (Admin chỉnh trong /portal/settings). */
 const Footer = () => {
     const { settings } = useStore().db;
 

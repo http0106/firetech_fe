@@ -1,7 +1,7 @@
 import { Button, Result } from 'antd';
 import { useNavigate, useRouteError } from 'react-router-dom';
 
-/** Trang 404 — trước đây link sai dẫn tới trang lỗi mặc định của React Router. */
+/** Trang 404 — địa chỉ không tồn tại. */
 export const NotFound = () => {
     const navigate = useNavigate();
     return (

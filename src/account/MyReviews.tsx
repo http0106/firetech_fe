@@ -1,21 +1,19 @@
 import { useState } from 'react';
 import { App, Button, Form, Input, Modal, Rate } from 'antd';
-import { EmptyState, PageHeader, Panel } from '../componentmain/ui';
+import { EmptyState, PageHeader, Panel } from '../components/ui';
 import ReviewList from '../users/component/ReviewList';
-import { useAuth } from '../context/AuthContext';
-import { useLookup, useStore } from '../context/StoreContext';
-import { todayISO, uid } from '../utils/format';
+import { useStore, useLookup } from '../store';
+import { todayISO, uid } from '../utils';
 import type { Review } from '../types';
 
 /**
- * GIAO DIỆN MỚI — Đánh giá của tôi.
+ * Đánh giá của tôi.
  * "Chờ đánh giá": sản phẩm trong đơn đã hoàn thành và công trình đã được bảo trì mà khách chưa đánh giá.
  */
 type Target = { type: Review['targetType']; id: string; name: string };
 
 const MyReviews = () => {
-    const { user } = useAuth();
-    const { db, update } = useStore();
+    const { db, add, user } = useStore();
     const lookup = useLookup();
     const { message } = App.useApp();
     const [target, setTarget] = useState<Target | null>(null);
@@ -33,10 +31,7 @@ const MyReviews = () => {
 
     const submit = (v: { rating: number; comment: string }) => {
         if (!target) return;
-        update('reviews', (list) => [
-            { id: uid('r'), userId: user.id, userName: user.name, targetType: target.type, targetId: target.id, rating: v.rating, comment: v.comment, createdAt: todayISO() },
-            ...list,
-        ]);
+        add('reviews', { id: uid('r'), userId: user.id, userName: user.name, targetType: target.type, targetId: target.id, rating: v.rating, comment: v.comment, createdAt: todayISO() });
         setTarget(null);
         message.success('Cảm ơn bạn đã đánh giá!');
     };

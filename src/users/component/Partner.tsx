@@ -1,4 +1,3 @@
-
 import { FaBuilding } from 'react-icons/fa'
 
 
@@ -22,7 +21,7 @@ const Partner = () => {
 
                 {/* Tiêu đề phân đoạn */}
                 <div className="text-center space-y-1">
-                    <h3 className=" sm:text-sm shrink-0 text-[13px] font-bold tracking-[.08em] uppercase text-[var(--muted)]">
+                    <h3 className=" sm:text-sm shrink-0 text-[13px] font-bold tracking-[.08em] uppercase text-[var(--text)]">
                         ĐÃ ĐỒNG HÀNH CÙNG
                     </h3>
 

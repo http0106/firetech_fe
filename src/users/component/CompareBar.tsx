@@ -1,13 +1,12 @@
 import { Button } from 'antd';
 import { FaBalanceScale, FaTimes } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { useShop, MAX_COMPARE } from '../../context/ShopContext';
-import { useLookup } from '../../context/StoreContext';
-import ProductThumb from '../../componentmain/ProductThumb';
+import { useStore, MAX_COMPARE, useLookup } from '../../store';
+import { ProductThumb } from '../../components/ui';
 
 /** Thanh so sánh nổi ở cuối màn hình khi đã chọn sản phẩm để so sánh. */
 const CompareBar = () => {
-    const { compare, toggleCompare, clearCompare } = useShop();
+    const { compare, toggleCompare, clearCompare } = useStore();
     const lookup = useLookup();
     const navigate = useNavigate();
     if (!compare.length) return null;

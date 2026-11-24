@@ -1,10 +1,10 @@
 import { Card, Steps } from 'antd';
 import { CheckCircleFilled } from '@ant-design/icons';
-import QuoteForm from '../componentmain/QuoteForm';
-import { SectionTitle } from '../componentmain/ui';
+import QuoteForm from '../components/QuoteForm';
+import { SectionTitle } from '../components/ui';
 
 /**
- * Trang Tư vấn & Thiết kế (menu Header trỏ tới /services nhưng trước đây chưa có trang).
+ * Trang Tư vấn & Thiết kế.
  * Các mục #approval, #design, #acceptance khớp với submenu trên Header.
  */
 const SERVICES = [

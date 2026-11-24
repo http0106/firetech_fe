@@ -2,29 +2,24 @@ import { useState } from 'react';
 import { App, Breadcrumb, Button, Card, Form, Input, InputNumber, Modal, Rate, Result, Tabs, Tag } from 'antd';
 import { FaBalanceScale, FaBolt, FaCartPlus, FaCheckCircle, FaFileInvoiceDollar } from 'react-icons/fa';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import ProductThumb from '../componentmain/ProductThumb';
-import QuoteForm from '../componentmain/QuoteForm';
+import { ProductThumb } from '../components/ui';
+import QuoteForm from '../components/QuoteForm';
 import ProductList from './component/ProductList';
 import ReviewList from './component/ReviewList';
 import CompareBar from './component/CompareBar';
 import { DOC_TYPES, STANDARDS, categoryLabel } from '../data/constants';
-import { useStore } from '../context/StoreContext';
-import { maxQtyOf, useShopActions } from '../context/ShopContext';
-import { useAuth } from '../context/AuthContext';
-import { ratingOf } from '../utils/business';
-import { formatPrice, todayISO, uid } from '../utils/format';
+import { useStore, MAX_COMPARE } from '../store';
+import { ratingOf, todayISO, uid } from '../utils';
 import type { Review } from '../types';
 
 /**
- * GIAO DIỆN MỚI — Chi tiết sản phẩm.
+ * Chi tiết sản phẩm.
  * Thông số, tiêu chuẩn kiểm định, bảo hành, hướng dẫn sử dụng liên quan, đánh giá (chỉ khách đã mua
  * mới được đánh giá), thêm giỏ / mua ngay / yêu cầu báo giá / so sánh.
  */
 const ProductDetail = () => {
     const { id } = useParams();
-    const { db, update } = useStore();
-    const { user } = useAuth();
-    const { compare, addWithToast, toggleCompareWithToast } = useShopActions();
+    const { db, add, user, addToCart, compare, toggleCompare } = useStore();
     const { message } = App.useApp();
     const navigate = useNavigate();
     const [qty, setQty] = useState(1);
@@ -62,7 +57,7 @@ const ProductDetail = () => {
             comment: v.comment,
             createdAt: todayISO(),
         };
-        update('reviews', (list) => [review, ...list]);
+        add('reviews', review);
         message.success('Cảm ơn bạn đã đánh giá!');
     };
 
@@ -101,76 +96,71 @@ const ProductDetail = () => {
             />
 
             <Card>
-                <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-                    <div className="aspect-square rounded-xl overflow-hidden bg-slate-50 select-none">
-                        <ProductThumb product={product} size="lg" />
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                <div className="aspect-square rounded-xl overflow-hidden bg-slate-50 select-none">
+                    <ProductThumb product={product} size="lg" />
+                </div>
+
+                <div className="flex flex-col gap-4">
+                    <div>
+                        <div className="text-sm text-[var(--text)]">{product.brand} · Mã: <b className="text-[var(--text-h)]">{product.code}</b></div>
+                        <h1 className="m-0 tracking-normal text-2xl sm:text-3xl font-extrabold text-[var(--text-h)] mt-1">{product.name}</h1>
+                        <div className="flex items-center gap-2 mt-2 text-sm text-[var(--text)]">
+                            <Rate disabled allowHalf value={Math.round(rating.avg * 2) / 2} style={{ fontSize: 14 }} />
+                            {rating.count ? `${rating.avg.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} (${rating.count} đánh giá)` : 'Chưa có đánh giá'}
+                        </div>
                     </div>
 
-                    <div className="flex flex-col gap-4">
+                    <div className="flex items-end gap-3">
+                        <span className="text-3xl font-extrabold text-red-600">{product.price.toLocaleString('vi-VN')}đ</span>
+                        {product.oldPrice && <span className="text-base line-through text-[var(--text)]">{product.oldPrice.toLocaleString('vi-VN')}đ</span>}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        {product.standards.map((s) => (
+                            <Tag key={s} color={s === 'bca' ? 'red' : 'blue'} icon={<FaCheckCircle className="mr-1" />} className="m-0 inline-flex items-center">
+                                {STANDARDS.find((x) => x.key === s)?.label}
+                            </Tag>
+                        ))}
+                    </div>
+
+                    <p className="text-sm text-[var(--text)] leading-relaxed">{product.description}</p>
+
+                    <div className="text-sm space-y-1 text-[var(--text)]">
+                        <div>Bảo hành: <b className="text-[var(--text-h)]">{product.warrantyMonths} tháng</b></div>
                         <div>
-                            <div className="text-sm text-[var(--text)]">{product.brand} · Mã: <b className="text-[var(--text-h)]">{product.code}</b></div>
-                            <h1 className="m-0 tracking-normal text-2xl sm:text-3xl font-extrabold text-[var(--text-h)] mt-1">{product.name}</h1>
-                            <div className="flex items-center gap-2 mt-2 text-sm text-[var(--text)]">
-                                <Rate disabled allowHalf value={Math.round(rating.avg * 2) / 2} style={{ fontSize: 14 }} />
-                                {rating.count ? `${rating.avg.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} (${rating.count} đánh giá)` : 'Chưa có đánh giá'}
-                            </div>
+                            Tình trạng:{' '}
+                            <b className={product.stock > 0 ? 'text-emerald-600' : 'text-[var(--text-h)]'}>
+                                {product.stock > 0 ? `Kho còn ${product.stock}` : 'Tạm hết hàng'}
+                            </b>
                         </div>
+                        <div>Giao hàng: nội thành Hà Nội trong ngày</div>
+                    </div>
 
-                        <div className="flex items-end gap-3">
-                            <span className="text-3xl font-extrabold text-red-600">{formatPrice(product.price)}</span>
-                            {product.oldPrice && product.oldPrice > product.price && (
-                                <span className="text-base line-through text-[var(--text)]">{formatPrice(product.oldPrice)}</span>
-                            )}
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                            {product.standards.map((s) => (
-                                <Tag key={s} color={s === 'bca' ? 'red' : 'blue'} icon={<FaCheckCircle className="mr-1" />} className="m-0 inline-flex items-center">
-                                    {STANDARDS.find((x) => x.key === s)?.label}
-                                </Tag>
-                            ))}
-                        </div>
-
-                        <p className="text-sm text-[var(--text)] leading-relaxed">{product.description}</p>
-
-                        <div className="text-sm space-y-1 text-[var(--text)]">
-                            <div>Bảo hành: <b className="text-[var(--text-h)]">{product.warrantyMonths} tháng</b></div>
-                            <div>
-                                Tình trạng:{' '}
-                                <b className={product.stock > 0 ? 'text-emerald-600' : 'text-[var(--text-h)]'}>
-                                    {product.stock > 0 ? `Kho còn ${product.stock}` : 'Tạm hết hàng'}
-                                </b>
-                            </div>
-                            <div>Giao hàng: nội thành Hà Nội trong ngày</div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3 pt-2">
-                            <InputNumber min={1} max={Math.max(1, maxQtyOf(product))} value={qty} onChange={(v) => setQty(v ?? 1)} size="large" className="w-28" disabled={product.stock <= 0} />
-                            <Button size="large" icon={<FaCartPlus />} disabled={product.stock <= 0} onClick={() => addWithToast(product.id, qty)}>
-                                Thêm vào giỏ
-                            </Button>
-                            <Button type="primary" danger size="large" icon={<FaBolt />} disabled={product.stock <= 0}
-                                onClick={() => {
-                                    // Đã có đủ số lượng trong giỏ vẫn cho sang trang giỏ hàng
-                                    const res = addWithToast(product.id, qty, { silent: true });
-                                    if (res.ok || res.reason === 'max_reached') navigate('/cart');
-                                }}>
-                                Mua ngay
-                            </Button>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            <Button icon={<FaFileInvoiceDollar />} onClick={() => setQuoteOpen(true)}>Yêu cầu báo giá số lượng lớn</Button>
-                            <Button
-                                type={inCompare ? 'primary' : 'default'}
-                                ghost={inCompare}
-                                icon={<FaBalanceScale />}
-                                onClick={() => toggleCompareWithToast(product.id)}
-                            >
-                                {inCompare ? 'Đã thêm vào so sánh' : 'So sánh'}
-                            </Button>
-                        </div>
+                    <div className="flex flex-wrap items-center gap-3 pt-2">
+                        <InputNumber min={1} max={99} value={qty} onChange={(v) => setQty(v ?? 1)} size="large" className="w-28" />
+                        <Button size="large" icon={<FaCartPlus />} disabled={product.stock <= 0}
+                            onClick={() => { addToCart(product.id, qty); message.success('Đã thêm vào giỏ hàng'); }}>
+                            Thêm vào giỏ
+                        </Button>
+                        <Button type="primary" danger size="large" icon={<FaBolt />} disabled={product.stock <= 0}
+                            onClick={() => { addToCart(product.id, qty); navigate('/cart'); }}>
+                            Mua ngay
+                        </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <Button icon={<FaFileInvoiceDollar />} onClick={() => setQuoteOpen(true)}>Yêu cầu báo giá số lượng lớn</Button>
+                        <Button
+                            type={inCompare ? 'primary' : 'default'}
+                            ghost={inCompare}
+                            icon={<FaBalanceScale />}
+                            onClick={() => { if (!toggleCompare(product.id)) message.warning(`Chỉ so sánh tối đa ${MAX_COMPARE} sản phẩm`); }}
+                        >
+                            {inCompare ? 'Đã thêm vào so sánh' : 'So sánh'}
+                        </Button>
                     </div>
                 </div>
+            </div>
             </Card>
 
             <Card className="mt-6">

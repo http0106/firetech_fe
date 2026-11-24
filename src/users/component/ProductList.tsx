@@ -1,10 +1,9 @@
 import type { Product } from '../../types';
-import ProductCard from './ProductCard.tsx';
+import ProductCard from './ProductCard';
 
 /**
- * Lưới sản phẩm — giữ tiêu đề và cách chia cột theo `row` như phiên bản cũ.
- * Đã sửa: nhận danh sách sản phẩm từ ngoài (dữ liệu dùng chung), co giãn trên điện thoại
- * (2 cột → 3 cột → `row` cột), key theo id, bỏ console.log.
+ * Lưới sản phẩm có tiêu đề. `row` = số cột trên màn hình lớn
+ * (điện thoại 2 cột, máy tính bảng 3 cột).
  */
 const COLS: Record<number, string> = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' };
 

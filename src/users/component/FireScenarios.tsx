@@ -1,19 +1,88 @@
+import { useState } from 'react';
 import { Card, Tabs } from 'antd';
-import { useSearchParams } from 'react-router-dom';
-import { FIRE_SCENARIOS } from '../../data/content';
-import { useLookup } from '../../context/StoreContext';
-import { SectionTitle } from '../../componentmain/ui';
-import ProductCard from './ProductCard.tsx';
+import { useLookup } from '../../store';
+import { SectionTitle } from '../../components/ui';
+import ProductCard from './ProductCard';
 import type { Product } from '../../types';
 
-/**
- * Các trường hợp cháy thường gặp & thiết bị bảo hộ nên có (trang Giới thiệu).
- * Mở sẵn một tình huống qua URL: /introduction?scenario=bep#tinh-huong
- */
+/** Các tình huống cháy hiển thị trong các tab. productIds = id sản phẩm gợi ý (xem src/data/products.ts). */
+interface FireScenario {
+    key: string;
+    title: string;
+    place: string;
+    causes: string[];
+    /** Sản phẩm gợi ý (id) */
+    productIds: string[];
+    tips: string[];
+}
+
+const FIRE_SCENARIOS: FireScenario[] = [
+    {
+        key: 'bep',
+        title: 'Cháy bếp & rò rỉ gas',
+        place: 'Hộ gia đình, nhà hàng, bếp ăn tập thể',
+        causes: ['Rò rỉ gas, dây dẫn gas lão hóa', 'Dầu mỡ quá nhiệt bắt lửa', 'Quên tắt bếp, để vật dễ cháy gần lửa'],
+        productIds: ['p10', 'p2', 'p21', 'p6'],
+        tips: [
+            'Khóa van bình gas trước khi xử lý.',
+            'Không dùng nước dập chảo dầu đang cháy — trùm chăn chiên kín miệng chảo.',
+            'Bếp nên dùng đầu báo nhiệt thay đầu báo khói để tránh báo giả.',
+        ],
+    },
+    {
+        key: 'dien',
+        title: 'Chập điện & cháy thiết bị điện',
+        place: 'Văn phòng, phòng server, tủ điện tòa nhà',
+        causes: ['Quá tải ổ cắm, dây dẫn xuống cấp', 'Thiết bị sạc để qua đêm', 'Tủ điện ẩm, bụi bẩn'],
+        productIds: ['p6', 'p7', 'p20', 'p22'],
+        tips: [
+            'Ngắt cầu dao/aptomat trước khi chữa cháy.',
+            'Ưu tiên bình CO2 — không để lại cặn, không dẫn điện.',
+            'Không dùng nước hoặc bình bọt cho đám cháy điện đang có điện.',
+        ],
+    },
+    {
+        key: 'nha-xuong',
+        title: 'Cháy nhà xưởng & kho hàng',
+        place: 'Xưởng may, kho vải, giấy, gỗ, kho logistics',
+        causes: ['Hàng hóa dễ cháy chất cao sát trần, sát đèn', 'Hàn cắt kim loại không che chắn', 'Hút thuốc trong kho'],
+        productIds: ['p4', 'p5', 'p13', 'p16', 'p18'],
+        tips: [
+            'Giữ lối thoát nạn thông thoáng, không chất hàng chắn tủ PCCC.',
+            'Bố trí bình chữa cháy ở vị trí dễ thấy, cách nhau không quá 15 – 20 m.',
+            'Tổ chức diễn tập PCCC ít nhất mỗi năm một lần.',
+        ],
+    },
+    {
+        key: 'cao-tang',
+        title: 'Cháy chung cư & nhà cao tầng',
+        place: 'Chung cư, khách sạn, nhà phố nhiều tầng',
+        causes: ['Cháy lan từ căn hộ, kho chứa đồ ở hành lang', 'Khói độc lan qua thang bộ, giếng kỹ thuật', 'Lối thoát bị khóa hoặc chắn'],
+        productIds: ['p9', 'p11', 'p19', 'p12'],
+        tips: [
+            'Dùng thang bộ, tuyệt đối không dùng thang máy khi có cháy.',
+            'Đeo mặt nạ phòng độc hoặc che mũi bằng khăn ướt, cúi thấp người khi di chuyển.',
+            'Nhà phố nên có lối thoát thứ hai (cửa sổ, ban công) và thang dây.',
+        ],
+    },
+    {
+        key: 'xe',
+        title: 'Cháy ô tô & xe máy',
+        place: 'Xe cá nhân, bãi đỗ xe, hầm gửi xe',
+        causes: ['Chập điện do độ chế thiết bị', 'Rò rỉ nhiên liệu', 'Sạc xe điện sai cách trong hầm'],
+        productIds: ['p1', 'p12', 'p4'],
+        tips: [
+            'Dừng xe, tắt máy, đưa mọi người ra khỏi xe trước.',
+            'Chỉ chữa cháy khi đám cháy nhỏ; đứng đầu gió, cách 1,5 – 2 m.',
+            'Không mở nắp capo khi đang cháy lớn — oxy sẽ làm lửa bùng lên.',
+        ],
+    },
+];
+
+/** Các trường hợp cháy thường gặp & thiết bị nên có (trang Giới thiệu). */
 const FireScenarios = () => {
-    const [params, setParams] = useSearchParams();
     const lookup = useLookup();
-    const active = FIRE_SCENARIOS.find((s) => s.key === params.get('scenario'))?.key ?? FIRE_SCENARIOS[0].key;
+    const [active, setActive] = useState(FIRE_SCENARIOS[0].key);
 
     return (
         <section id="tinh-huong" className="py-12 scroll-mt-36">
@@ -21,7 +90,7 @@ const FireScenarios = () => {
 
             <Tabs
                 activeKey={active}
-                onChange={(key) => setParams((p) => { p.set('scenario', key); return p; }, { replace: true, preventScrollReset: true })}
+                onChange={setActive}
                 items={FIRE_SCENARIOS.map((s) => ({
                     key: s.key,
                     label: s.title,
